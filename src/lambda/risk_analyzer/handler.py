@@ -3,10 +3,11 @@ Sudharshan-AI: Risk Analyzer Lambda Handler
 Main entry point for transaction risk analysis.
 """
 
+import os
 import json
 import logging
+import boto3
 from typing import Any
-
 from models import (
     RiskAnalysisRequest,
     RiskAnalysisResponse,
@@ -29,7 +30,13 @@ from constants import (
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-# Initialize Bedrock client (cold start optimization)
+# Initialize AWS clients
+dynamodb = boto3.resource("dynamodb")
+stepfunctions = boto3.client("stepfunctions")
+table_name = os.environ.get("USER_BASELINES_TABLE", "UserBaselines")
+state_machine_arn = os.environ.get("STATE_MACHINE_ARN")
+
+# Initialize Bedrock client
 bedrock_analyzer = BedrockFraudAnalyzer()
 
 
@@ -66,6 +73,13 @@ def handler(event: dict, context: Any) -> dict:
         
         # Determine decision based on risk score
         decision = _determine_decision(risk_score)
+        
+        # Trigger Step Functions for HOLD or DELAY
+        if decision in [DECISION_HOLD, DECISION_DELAY]:
+            _trigger_workflow(request.session_id, risk_score, decision, reasoning)
+            
+        # Update user baseline in DynamoDB (Async-like pattern)
+        _update_user_baseline(request.user_id, request.signals)
         
         # Build response
         response = RiskAnalysisResponse(
@@ -131,6 +145,46 @@ def _determine_decision(risk_score: int) -> str:
         return DECISION_DELAY
     else:
         return DECISION_HOLD
+
+
+def _trigger_workflow(session_id: str, risk_score: int, decision: str, reasoning: str):
+    """Trigger AWS Step Functions circuit breaker."""
+    if not state_machine_arn:
+        logger.warning("STATE_MACHINE_ARN not configured, skipping workflow")
+        return
+
+    try:
+        stepfunctions.start_execution(
+            stateMachineArn=state_machine_arn,
+            name=f"alert-{session_id}",
+            input=json.dumps({
+                "session_id": session_id,
+                "risk_score": risk_score,
+                "decision": decision,
+                "reasoning": reasoning
+            })
+        )
+    except Exception as e:
+        logger.error(f"Failed to trigger Step Functions: {str(e)}")
+
+
+def _update_user_baseline(user_id: str, signals: BehavioralSignals):
+    """Update user's behavioral baseline in DynamoDB."""
+    try:
+        table = dynamodb.Table(table_name)
+        # Simplified: Just store current signals as 'last_known' for the MVP
+        table.put_item(
+            Item={
+                "user_id": user_id,
+                "last_typing_speed": signals.typing_speed_wpm,
+                "last_hesitation_count": signals.hesitation_count,
+                "last_screen_time": signals.time_on_confirm_screen_ms,
+                "is_on_call": signals.is_on_call,
+                "timestamp": int(json.loads(json.dumps(signals.time_of_day_hour))) # hack for simple numeric
+            }
+        )
+    except Exception as e:
+        logger.error(f"Failed to update DynamoDB: {str(e)}")
 
 
 def _build_response(status_code: int, body: dict) -> dict:

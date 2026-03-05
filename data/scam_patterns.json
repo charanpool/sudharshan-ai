@@ -1,0 +1,29 @@
+{
+    "digital_arrest": {
+        "description": "Scammers impersonate police or CBI, claiming the user is under 'digital arrest' and demanding money to settle a fake case.",
+        "indicators": [
+            "arrest warrant threat",
+            "immediate payment",
+            "keep call active",
+            "video call requirement"
+        ]
+    },
+    "kyc_scam": {
+        "description": "Scammers claim bank KYC is expiring and ask user to transfer money to a 'security' account or share screen.",
+        "indicators": [
+            "kyc expiring",
+            "bank account block",
+            "screen share request",
+            "remote access apps"
+        ]
+    },
+    "lottery_scam": {
+        "description": "User is told they won a prize but must pay a 'processing fee' or 'GST' via UPI first.",
+        "indicators": [
+            "prize money",
+            "processing fee",
+            "official lottery",
+            "whatsapp notification"
+        ]
+    }
+}

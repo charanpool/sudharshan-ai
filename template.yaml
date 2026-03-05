@@ -1,0 +1,100 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Sudharshan-AI: Real-Time Fraud Sentinel for UPI Ecosystem
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Runtime: python3.9
+    Environment:
+      Variables:
+        USER_BASELINES_TABLE: !Ref UserBaselinesTable
+        STATE_MACHINE_ARN: !Ref CircuitBreakerStateMachine
+
+Resources:
+  ### API Gateway ###
+  SudharshanApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      Cors:
+        AllowMethods: "'POST,GET,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Api-Key'"
+        AllowOrigin: "'*'"
+
+  ### DynamoDB Tables ###
+  UserBaselinesTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      PrimaryKey:
+        Name: user_id
+        Type: String
+
+  ### Lambda Functions ###
+  RiskAnalyzerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: lambda/risk_analyzer/handler.handler
+      Events:
+        AnalyzeApi:
+          Type: Api
+          Properties:
+            Path: /analyze
+            Method: post
+            RestApiId: !Ref SudharshanApi
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UserBaselinesTable
+        - StepFunctionsExecutionPolicy:
+            StateMachineName: !GetAtt CircuitBreakerStateMachine.Name
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource: "*"
+
+  ### Step Functions (Circuit Breaker) ###
+  CircuitBreakerStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Definition:
+        StartAt: DetermineAction
+        States:
+          DetermineAction:
+            Type: Choice
+            Choices:
+              - Variable: "$.decision"
+                StringEquals: "hold"
+                Next: HoldTransaction
+              - Variable: "$.decision"
+                StringEquals: "delay"
+                Next: DelayTransaction
+            Default: ApproveTransaction
+          
+          HoldTransaction:
+            Type: Task
+            Resource: "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AWS::StackName}-AlertFunction" # Placeholder for alert logic
+            Next: SuccessState
+          
+          DelayTransaction:
+            Type: Wait
+            Seconds: 300
+            Next: ApproveTransaction
+          
+          ApproveTransaction:
+            Type: Pass
+            Next: SuccessState
+
+          SuccessState:
+            Type: Succeed
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Sub "${AWS::StackName}-AlertFunction"
+
+Outputs:
+  SudharshanApiUrl:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${SudharshanApi}.execute-api.${AWS::Region}.amazonaws.com/prod/"
