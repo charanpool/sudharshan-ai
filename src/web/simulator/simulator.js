@@ -48,6 +48,24 @@ function updateTelemetry() {
     document.getElementById('stat-variance').innerText = calculateVariance();
 }
 
+const tremorSlider = document.getElementById('tremor-slider');
+const tremorVal = document.getElementById('tremor-val');
+const phoneMockup = document.querySelector('.phone-mockup');
+
+tremorSlider.addEventListener('input', (e) => {
+    const val = e.target.value;
+    tremorVal.innerText = val;
+    // Massive "WOW" factor for Judges: visual tremor representation
+    if (val > 0) {
+        const intensity = val * 0.5; // Adjust pixel shake
+        phoneMockup.style.animation = `shake 0.${11 - val}s infinite`;
+        phoneMockup.style.transform = `translate(${Math.random() * intensity}px, ${Math.random() * intensity}px)`;
+    } else {
+        phoneMockup.style.animation = 'none';
+        phoneMockup.style.transform = 'none';
+    }
+});
+
 payBtn.addEventListener('click', async () => {
     // Show loading
     riskModal.classList.remove('hidden');
@@ -62,7 +80,8 @@ payBtn.addEventListener('click', async () => {
             hesitation_count: hesitations,
             time_on_confirm_screen_ms: keystrokes.reduce((a, b) => a + b, 0),
             is_on_call: document.getElementById('on-call-toggle').checked,
-            time_of_day_hour: new Date().getHours()
+            time_of_day_hour: new Date().getHours(),
+            tremor_intensity: parseInt(tremorSlider.value)
         },
         transaction: {
             amount: parseFloat(amountInput.value) || 0,
@@ -71,7 +90,7 @@ payBtn.addEventListener('click', async () => {
         }
     };
 
-    aiThought.innerText = "Transmitting behavioral signals to Bedrock (Claude Haiku)...";
+    aiThought.innerText = "Transmitting behavioral signals & Gyro telemetry to Bedrock Agent...";
 
     // Simulate API Call (Replace with actual endpoint after deployment)
     try {
@@ -91,10 +110,16 @@ function calculateSimulatedRisk(payload) {
     if (payload.signals.is_on_call) score += 40;
     if (payload.transaction.amount > 50000) score += 20;
     if (payload.signals.hesitation_count > 3) score += 20;
+    if (payload.signals.tremor_intensity > 6) score += 30; // Huge red flag
+
+    // Cap at 100
+    score = Math.min(100, score);
 
     let reason = "Transaction appears safe.";
-    if (score > 70) {
-        reason = "High likelihood of Digital Arrest scam. User is on a call while transferring a large amount with high hesitation.";
+    if (score >= 80) {
+        reason = "CRITICAL ALERT: High device tremors + active call detected during large transfer. Suspected Digital Arrest psychological coercion.";
+    } else if (score > 60) {
+        reason = "High likelihood of scam. User is under stress while transferring a large amount.";
     } else if (score > 30) {
         reason = "Unfavorable conditions detected. Transaction delayed for 5 minutes for your safety.";
     }

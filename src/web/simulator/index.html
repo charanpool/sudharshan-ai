@@ -43,11 +43,17 @@
                 </div>
 
                 <div class="security-flags">
-                    <span class="label">Currently on call</span>
-                    <label class="switch">
-                        <input type="checkbox" id="on-call-toggle">
-                        <span class="slider round"></span>
-                    </label>
+                    <div class="flag-row">
+                        <span class="label">Currently on call</span>
+                        <label class="switch">
+                            <input type="checkbox" id="on-call-toggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <div class="flag-row" style="margin-top: 15px;">
+                        <span class="label">Gyro Tremor (<span id="tremor-val">0</span>/10)</span>
+                        <input type="range" id="tremor-slider" min="0" max="10" value="0" style="width: 100%;">
+                    </div>
                 </div>
 
                 <button id="pay-btn" class="primary-btn">Pay Now</button>

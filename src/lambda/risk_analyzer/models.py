@@ -24,6 +24,7 @@ class BehavioralSignals:
     time_on_confirm_screen_ms: int = 0
     is_on_call: bool = False
     time_of_day_hour: int = 12
+    tremor_intensity: int = 0
 
 
 @dataclass

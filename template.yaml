@@ -56,6 +56,22 @@ Resources:
                 - bedrock:InvokeModel
               Resource: "*"
 
+  DuressAlertFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: lambda/risk_analyzer/duress_handler.handler
+      Events:
+        DuressApi:
+          Type: Api
+          Properties:
+            Path: /duress
+            Method: post
+            RestApiId: !Ref SudharshanApi
+      Policies:
+        - StepFunctionsExecutionPolicy:
+            StateMachineName: !GetAtt CircuitBreakerStateMachine.Name
+
   ### Step Functions (Circuit Breaker) ###
   CircuitBreakerStateMachine:
     Type: AWS::Serverless::StateMachine

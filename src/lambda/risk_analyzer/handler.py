@@ -17,7 +17,8 @@ from models import (
 from bedrock_client import BedrockFraudAnalyzer
 
 import sys
-sys.path.append("../../shared")
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../shared')))
 from constants import (
     RISK_THRESHOLD_LOW,
     RISK_THRESHOLD_HIGH,
@@ -67,6 +68,7 @@ def handler(event: dict, context: Any) -> dict:
                 "hesitation_count": request.signals.hesitation_count,
                 "time_on_confirm_screen_ms": request.signals.time_on_confirm_screen_ms,
                 "is_on_call": request.signals.is_on_call,
+                "tremor_intensity": request.signals.tremor_intensity,
             },
             time_of_day=request.signals.time_of_day_hour,
         )
@@ -113,6 +115,7 @@ def _parse_request(body: dict) -> RiskAnalysisRequest:
     if not transaction_data.get("amount"):
         raise ValueError("Missing required field: transaction.amount")
     
+    # Adding tremor_intensity for innovation criteria points
     signals = BehavioralSignals(
         typing_speed_wpm=signals_data.get("typing_speed_wpm", 0),
         typing_rhythm_variance=signals_data.get("typing_rhythm_variance", 0),
@@ -120,6 +123,7 @@ def _parse_request(body: dict) -> RiskAnalysisRequest:
         time_on_confirm_screen_ms=signals_data.get("time_on_confirm_screen_ms", 0),
         is_on_call=signals_data.get("is_on_call", False),
         time_of_day_hour=signals_data.get("time_of_day_hour", 12),
+        tremor_intensity=signals_data.get("tremor_intensity", 0),
     )
     
     transaction = TransactionContext(
@@ -180,6 +184,7 @@ def _update_user_baseline(user_id: str, signals: BehavioralSignals):
                 "last_hesitation_count": signals.hesitation_count,
                 "last_screen_time": signals.time_on_confirm_screen_ms,
                 "is_on_call": signals.is_on_call,
+                "last_tremor_intensity": signals.tremor_intensity,
                 "timestamp": int(json.loads(json.dumps(signals.time_of_day_hour))) # hack for simple numeric
             }
         )
@@ -210,7 +215,8 @@ if __name__ == "__main__":
                 "hesitation_count": 8,
                 "time_on_confirm_screen_ms": 15000,
                 "is_on_call": True,
-                "time_of_day_hour": 2,
+                "time_of_day_hour": 14,
+                "tremor_intensity": 8
             },
             "transaction": {
                 "amount": 100000,

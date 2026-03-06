@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sudharshan-AI | Admin Risk Dashboard</title>
+    <link rel="stylesheet" href="index.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@400;700;900&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div class="dashboard-wrapper">
+        <!-- Sidebar -->
+        <aside class="sidebar glass-panel">
+            <div class="logo-area">
+                <img src="../../../docs/assets/logo-transparent.png" alt="Logo" class="glow-logo">
+                <h1 class="brand-name">Sudharshan-AI</h1>
+            </div>
+            <nav class="side-nav">
+                <a href="#" class="nav-item active">● Live Operations</a>
+                <a href="#" class="nav-item">● Investigations</a>
+                <a href="#" class="nav-item">● Bedrock Config</a>
+                <a href="#" class="nav-item">● Analytics</a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-nav glass-panel">
+                <div class="nav-title">
+                    <h2>Live Risk Sentinel</h2>
+                    <span class="pulse-indicator">Processing UPI Traffic...</span>
+                </div>
+                <div class="user-profile">
+                    Admin / SOC Analyst
+                </div>
+            </header>
+
+            <div class="grid-layout">
+                <!-- Metrics -->
+                <div class="metric-card glass-panel">
+                    <h3>Scams Blocked (24h)</h3>
+                    <div class="metric-value text-accent">342</div>
+                </div>
+                <div class="metric-card glass-panel">
+                    <h3>Avg AI Latency</h3>
+                    <div class="metric-value">640ms</div>
+                </div>
+                <div class="metric-card glass-panel">
+                    <h3>Circuit Breakers</h3>
+                    <div class="metric-value text-danger">12 Active</div>
+                </div>
+
+                <!-- Live Stream -->
+                <div class="live-stream glass-panel grid-span-2">
+                    <div class="section-header">
+                        <h3>Critical Interventions Stream</h3>
+                        <div class="badge-danger">LIVE BEDROCK AGENTS</div>
+                    </div>
+
+                    <div class="incident-list">
+                        <!-- Mocked Incident 1 -->
+                        <div class="incident-card critical">
+                            <div class="incident-header">
+                                <span class="session-id">TXN-4928-DA</span>
+                                <span class="timestamp">Just now</span>
+                            </div>
+                            <div class="incident-body">
+                                <h4>Digital Arrest Pattern Detected</h4>
+                                <div class="telemetry-bar">
+                                    <span class="telemetry-item danger">Tremor: 8/10</span>
+                                    <span class="telemetry-item warning">Hesitation: High</span>
+                                    <span class="telemetry-item danger">Call Status: Active</span>
+                                </div>
+                                <div class="ai-reasoning">
+                                    <strong>AI Reasoning:</strong> Highly anomalous typing rhythm combined with severe
+                                    device tremor while on active call. 86% match with known Digital Arrest
+                                    psychological coercion pattern.
+                                </div>
+                            </div>
+                            <div class="incident-footer">
+                                <span class="action-taken badge-hold">SHIELD ACTIVATED: FUNDS HELD</span>
+                            </div>
+                        </div>
+
+                        <!-- Mocked Incident 2 -->
+                        <div class="incident-card warning">
+                            <div class="incident-header">
+                                <span class="session-id">TXN-1102-SC</span>
+                                <span class="timestamp">2 mins ago</span>
+                            </div>
+                            <div class="incident-body">
+                                <h4>Suspicious Screen Dwell Time</h4>
+                                <div class="telemetry-bar">
+                                    <span class="telemetry-item safe">Tremor: 1/10</span>
+                                    <span class="telemetry-item warning">Hesitation: 4 pauses > 2s</span>
+                                    <span class="telemetry-item safe">Call Status: None</span>
+                                </div>
+                                <div class="ai-reasoning">
+                                    <strong>AI Reasoning:</strong> User hesitated significantly before confirming 50,000
+                                    INR to new recipient. Possible coaching via secondary device.
+                                </div>
+                            </div>
+                            <div class="incident-footer">
+                                <span class="action-taken badge-delay">ACTION: 5-MIN COOLING OFF</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AWS Architecture Info -->
+                <div class="arch-card glass-panel">
+                    <h3>System Architecture</h3>
+                    <div class="arch-diagram-mock">
+                        <div class="aws-node">API Gateway</div>
+                        <div class="arrow">↓</div>
+                        <div class="aws-node hl">Lambda (Risk Analyzer)</div>
+                        <div class="arrow">↓</div>
+                        <div class="aws-node hl-gold">Bedrock App / Knowledge Base</div>
+                        <div class="arrow">↓</div>
+                        <div class="aws-node hl-danger">Step Functions (Circuit Breaker)</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+
+</html>
