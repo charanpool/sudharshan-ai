@@ -116,20 +116,16 @@ sudharshan-ai/
 git clone https://github.com/charanpool/sudharshan-ai.git
 cd sudharshan-ai
 
-# Create virtual environment
-python3 -m venv .venv
-source .venv/bin/activate
-
-# Install dependencies
-pip install -r src/lambda/risk_analyzer/requirements.txt
+# Install dependencies using uv
+uv sync
 ```
 
 ### Test Locally
 
 ```bash
-cd src/lambda/risk_analyzer
-python handler.py
+uv run python src/lambda/risk_analyzer/handler.py
 ```
+
 
 ### Sample API Request
 

@@ -20,13 +20,10 @@ src/
 ## Local Development
 
 ```bash
-# Create virtual environment
-python3 -m venv .venv
-source .venv/bin/activate
-
-# Install dependencies
-pip install -r src/lambda/risk_analyzer/requirements.txt
+# Install dependencies using uv
+uv sync
 ```
+
 
 ## AWS Deployment
 

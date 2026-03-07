@@ -7,7 +7,7 @@ import os
 import json
 import logging
 import boto3
-from typing import Any
+from typing import Any, Optional
 from models import (
     RiskAnalysisRequest,
     RiskAnalysisResponse,
@@ -15,6 +15,7 @@ from models import (
     TransactionContext,
 )
 from bedrock_client import BedrockFraudAnalyzer
+from behavioral import compute_behavioral_score
 
 import sys
 import os
@@ -35,6 +36,7 @@ logger.setLevel(logging.INFO)
 dynamodb = boto3.resource("dynamodb")
 stepfunctions = boto3.client("stepfunctions")
 table_name = os.environ.get("USER_BASELINES_TABLE", "UserBaselines")
+profiles_table_name = os.environ.get("RISK_PROFILES_TABLE", "RiskProfiles")
 state_machine_arn = os.environ.get("STATE_MACHINE_ARN")
 
 # Initialize Bedrock client
@@ -59,28 +61,42 @@ def handler(event: dict, context: Any) -> dict:
         
         logger.info(f"Analyzing session: {request.session_id}")
         
-        # Analyze with Bedrock
-        risk_score, reasoning, matched_pattern = bedrock_analyzer.analyze_transaction(
+        # 1. Fetch User Baseline and Risk Profile
+        baseline = _fetch_user_baseline(request.user_id)
+        risk_profile = _fetch_risk_profile(request.user_id)
+        
+        # 2. Check for Duress PIN (High Priority)
+        is_duress = _check_duress_pin(request.transaction.entered_pin, risk_profile)
+        
+        # 3. Analyze with Bedrock AI
+        ai_risk_score, ai_reasoning, matched_pattern = bedrock_analyzer.analyze_transaction(
             amount=request.transaction.amount,
             recipient_type=request.transaction.recipient_type,
-            behavioral_signals={
-                "typing_speed_wpm": request.signals.typing_speed_wpm,
-                "hesitation_count": request.signals.hesitation_count,
-                "time_on_confirm_screen_ms": request.signals.time_on_confirm_screen_ms,
-                "is_on_call": request.signals.is_on_call,
-                "tremor_intensity": request.signals.tremor_intensity,
-            },
+            behavioral_signals=request.signals.__dict__,
             time_of_day=request.signals.time_of_day_hour,
         )
         
-        # Determine decision based on risk score
+        # 4. Calculate Behavioral Deviation Score
+        behavioral_score = compute_behavioral_score(request.signals.__dict__, baseline)
+        
+        # 5. Combine Scores (Weighted: 60% AI, 40% Behavioral)
+        # If Duress PIN is triggered, force high risk
+        if is_duress:
+            risk_score = 100
+            reasoning = "URGENT: Duress PIN entered. Silent alert triggered."
+            matched_pattern = "duress_pin"
+        else:
+            risk_score = int((ai_risk_score * 0.6) + (behavioral_score * 0.4))
+            reasoning = f"AI: {ai_reasoning} | Behavioral Deviation: {behavioral_score}/100"
+
+        # Determine decision based on final risk score
         decision = _determine_decision(risk_score)
         
-        # Trigger Step Functions for HOLD or DELAY
-        if decision in [DECISION_HOLD, DECISION_DELAY]:
+        # Trigger Step Functions for HOLD, DELAY, or DURESS
+        if decision in [DECISION_HOLD, DECISION_DELAY] or is_duress:
             _trigger_workflow(request.session_id, risk_score, decision, reasoning)
             
-        # Update user baseline in DynamoDB (Async-like pattern)
+        # Update user baseline in DynamoDB
         _update_user_baseline(request.user_id, request.signals)
         
         # Build response
@@ -92,7 +108,7 @@ def handler(event: dict, context: Any) -> dict:
             matched_pattern=matched_pattern,
         )
         
-        logger.info(f"Risk score: {risk_score}, Decision: {decision}")
+        logger.info(f"Final Risk: {risk_score}, Decision: {decision}")
         
         return _build_response(200, response.to_dict())
         
@@ -130,6 +146,7 @@ def _parse_request(body: dict) -> RiskAnalysisRequest:
         amount=float(transaction_data["amount"]),
         recipient_type=transaction_data.get("recipient_type", "new"),
         recipient_id=transaction_data.get("recipient_id", "unknown"),
+        entered_pin=transaction_data.get("entered_pin"),
         is_first_transaction_to_recipient=transaction_data.get("is_first", True),
     )
     
@@ -170,6 +187,37 @@ def _trigger_workflow(session_id: str, risk_score: int, decision: str, reasoning
         )
     except Exception as e:
         logger.error(f"Failed to trigger Step Functions: {str(e)}")
+
+
+def _fetch_user_baseline(user_id: str) -> dict:
+    """Fetch user's behavioral baseline from DynamoDB."""
+    try:
+        table = dynamodb.Table(table_name)
+        response = table.get_item(Key={"user_id": user_id})
+        return response.get("Item", {})
+    except Exception as e:
+        logger.error(f"Failed to fetch baseline: {str(e)}")
+        return {}
+
+
+def _fetch_risk_profile(user_id: str) -> dict:
+    """Fetch user's risk profile (contains Duress PIN)."""
+    try:
+        table = dynamodb.Table(profiles_table_name)
+        response = table.get_item(Key={"user_id": user_id})
+        return response.get("Item", {})
+    except Exception as e:
+        logger.error(f"Failed to fetch risk profile: {str(e)}")
+        return {}
+
+
+def _check_duress_pin(entered_pin: Optional[str], risk_profile: dict) -> bool:
+    """Check if the entered PIN matches the configured Duress PIN."""
+    if not entered_pin or not risk_profile:
+        return False
+    
+    duress_pin = risk_profile.get("duress_pin_hash") # For MVP, we use plain match or hash
+    return entered_pin == duress_pin
 
 
 def _update_user_baseline(user_id: str, signals: BehavioralSignals):

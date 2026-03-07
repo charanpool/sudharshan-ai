@@ -33,6 +33,7 @@ class TransactionContext:
     amount: float
     recipient_type: str  # "new", "known", "trusted"
     recipient_id: str
+    entered_pin: Optional[str] = None
     is_first_transaction_to_recipient: bool = True
 
 
