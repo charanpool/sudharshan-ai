@@ -3,8 +3,11 @@ import json
 import uuid
 import sys
 import os
-
 import importlib.util
+
+# Ensure AWS region is set before loading boto3
+if "AWS_DEFAULT_REGION" not in os.environ:
+    os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
 
 # Add root to pythonpath
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
