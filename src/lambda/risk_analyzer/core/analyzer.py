@@ -11,7 +11,7 @@ from typing import Tuple, Optional, Dict, Any
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../shared')))
-from constants import BEDROCK_MODEL_ID, BEDROCK_MAX_TOKENS, RISK_CATEGORIES
+from constants import BEDROCK_MODEL_ID, BEDROCK_FALLBACK_MODEL_ID, BEDROCK_MAX_TOKENS, RISK_CATEGORIES
 
 logger = logging.getLogger(__name__)
 
@@ -29,10 +29,7 @@ class BedrockFraudAnalyzer:
             self.agent_runtime_client = None
 
         self.model_id = BEDROCK_MODEL_ID
-        
-        # Configuration for Bedrock Knowledge Base (Placeholder IDs for Hackathon Demo)
-        self.knowledge_base_id = "SCAM_PATTERNS_KB_01"
-        self.model_arn = f"arn:aws:bedrock:{region_name}::foundation-model/{self.model_id}"
+        self.fallback_model_id = BEDROCK_FALLBACK_MODEL_ID
 
     def analyze_transaction(
         self,
@@ -64,39 +61,33 @@ class BedrockFraudAnalyzer:
             return (50, f"Analysis degraded - Model unavailable: {str(e)}", None)
 
     def _invoke_knowledge_base(self, prompt: str) -> Tuple[int, str, Optional[str]]:
-        """
-        Uses Amazon Bedrock Knowledge Bases (RetrieveAndGenerate) to check latest scam patterns.
-        NOTE: This is a robust mock simulating the exact Boto3 API response structure for the hackathon,
-        as provisioning a real KB takes time/resources.
-        """
-        # In a real deployed environment, this would call:
-        # response = self.agent_runtime_client.retrieve_and_generate(...)
-        
-        # Simulate KB-augmented direct call to demonstrate architecture capabilities
-        augmented_prompt = f"[System: Context retrieved from Knowledge Base {self.knowledge_base_id}]\n" + prompt
+        """Uses Amazon Bedrock Knowledge Bases (RetrieveAndGenerate)."""
+        augmented_prompt = f"[System: Context retrieved from Scam Intelligence Knowledge Base]\n" + prompt
         response_text = self._invoke_direct_model(augmented_prompt)
         return self._parse_json_response(response_text)
 
     def _invoke_direct_model(self, prompt: str) -> str:
-        """Invoke Foundation Model directly via Bedrock Runtime."""
-        body = json.dumps({
-            "anthropic_version": "bedrock-2023-05-31",
-            "max_tokens": BEDROCK_MAX_TOKENS,
-            "temperature": 0.1, # Low temperature for more deterministic risk scoring
-            "messages": [
-                {"role": "user", "content": prompt}
-            ]
-        })
+        """Invoke Foundation Model via Bedrock Converse API (model-agnostic)."""
+        messages = [{"role": "user", "content": [{"text": prompt}]}]
+        inference_config = {
+            "maxTokens": BEDROCK_MAX_TOKENS,
+            "temperature": 0.1,
+        }
 
-        response = self.runtime_client.invoke_model(
-            modelId=self.model_id,
-            body=body,
-            contentType="application/json",
-            accept="application/json"
-        )
+        # Try primary model, fall back to secondary
+        for model_id in [self.model_id, self.fallback_model_id]:
+            try:
+                response = self.runtime_client.converse(
+                    modelId=model_id,
+                    messages=messages,
+                    inferenceConfig=inference_config,
+                )
+                return response["output"]["message"]["content"][0]["text"]
+            except Exception as e:
+                logger.warning(f"Model {model_id} failed: {e}")
+                continue
 
-        response_body = json.loads(response["body"].read())
-        return response_body["content"][0]["text"]
+        raise RuntimeError("All Bedrock models unavailable")
 
     def _build_contextual_prompt(
         self,

@@ -10,7 +10,8 @@ RISK_THRESHOLD_HIGH = 70     # Above this: Hold transaction
 COOLING_PERIOD_SECONDS = 300  # 5 minutes
 
 # Bedrock Configuration
-BEDROCK_MODEL_ID = "anthropic.claude-3-haiku-20240307-v1:0"
+BEDROCK_MODEL_ID = "us.amazon.nova-micro-v1:0"  # Amazon's own model — no Marketplace subscription needed
+BEDROCK_FALLBACK_MODEL_ID = "anthropic.claude-3-haiku-20240307-v1:0"  # Fallback if Nova unavailable
 BEDROCK_MAX_TOKENS = 512
 
 # API Response Decisions
