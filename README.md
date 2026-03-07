@@ -91,14 +91,18 @@ sudharshan-ai/
 ├── src/
 │   ├── lambda/
 │   │   └── risk_analyzer/
-│   │       ├── handler.py           # Main Lambda entry point
-│   │       ├── behavioral.py        # Behavioral deviation engine (NEW)
-│   │       ├── bedrock_client.py    # Amazon Bedrock integration
-│   │       ├── models.py            # Data structures
-│   │       └── circuit_breaker.asl.json # Step Functions definition (NEW)
+│   │       ├── handler.py           # Main Lambda orchestrator
+│   │       ├── core/                # Core logic engines
+│   │       │   ├── analyzer.py      # Bedrock AI integration
+│   │       │   └── behavioral.py    # Behavioral deviation engine
+│   │       ├── utils/               # Supporting utilities
+│   │       │   ├── models.py        # Data structures
+│   │       │   └── reporting.py     # Investigator report logic
+│   │       ├── circuit_breaker.asl.json # Step Functions definition
+│   │       └── scam_intelligence.json   # Scam script KB
 │   └── shared/
 │       └── constants.py             # System-wide configuration
-├── seed_baselines.py                # Mock data seeder (NEW)
+├── seed_baselines.py                # Mock data seeder
 ├── test_local_mock.py               # Enhanced verification suite
 └── pyproject.toml                   # uv configuration
 ```

@@ -10,7 +10,7 @@ from typing import Tuple, Optional, Dict, Any
 
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../shared')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../shared')))
 from constants import BEDROCK_MODEL_ID, BEDROCK_MAX_TOKENS, RISK_CATEGORIES
 
 logger = logging.getLogger(__name__)
@@ -109,7 +109,8 @@ class BedrockFraudAnalyzer:
         
         # Load local scam intelligence for prompt enrichment
         try:
-            with open(os.path.join(os.path.dirname(__file__), 'scam_intelligence.json'), 'r') as f:
+            intel_path = os.path.join(os.path.dirname(__file__), '../scam_intelligence.json')
+            with open(intel_path, 'r') as f:
                 intel = json.load(f)
                 patterns = "\n".join([f"- {p['name']} ({', '.join(p['languages'])}): {p['scripts'][0]}" for p in intel['scam_patterns']])
         except Exception:

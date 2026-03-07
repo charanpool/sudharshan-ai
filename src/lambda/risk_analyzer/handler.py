@@ -8,15 +8,15 @@ import json
 import logging
 import boto3
 from typing import Any, Optional
-from models import (
+from utils.models import (
     RiskAnalysisRequest,
     RiskAnalysisResponse,
     BehavioralSignals,
     TransactionContext,
 )
-from bedrock_client import BedrockFraudAnalyzer
-from behavioral import compute_behavioral_score
-from investigator_report import generate_fraud_fact_sheet
+from core.analyzer import BedrockFraudAnalyzer
+from core.behavioral import compute_behavioral_score
+from utils.reporting import generate_fraud_fact_sheet
 
 import sys
 import os
