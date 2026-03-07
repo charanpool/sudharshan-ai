@@ -88,15 +88,19 @@ sudharshan-ai/
 │   │   └── process-flow.png       # Fraud detection flow
 │   └── presentations/
 │       └── Idea Submission.pdf    # Hackathon presentation
-└── src/
-    ├── lambda/
-    │   └── risk_analyzer/         # Core fraud detection Lambda
-    │       ├── handler.py         # Lambda entry point
-    │       ├── bedrock_client.py  # Bedrock AI integration
-    │       ├── models.py          # Data models
-    │       └── requirements.txt   # Dependencies
-    └── shared/
-        └── constants.py           # Shared configuration
+├── src/
+│   ├── lambda/
+│   │   └── risk_analyzer/
+│   │       ├── handler.py           # Main Lambda entry point
+│   │       ├── behavioral.py        # Behavioral deviation engine (NEW)
+│   │       ├── bedrock_client.py    # Amazon Bedrock integration
+│   │       ├── models.py            # Data structures
+│   │       └── circuit_breaker.asl.json # Step Functions definition (NEW)
+│   └── shared/
+│       └── constants.py             # System-wide configuration
+├── seed_baselines.py                # Mock data seeder (NEW)
+├── test_local_mock.py               # Enhanced verification suite
+└── pyproject.toml                   # uv configuration
 ```
 
 
