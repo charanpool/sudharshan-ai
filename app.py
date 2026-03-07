@@ -10,11 +10,14 @@ import importlib.util
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Dynamically import handler because 'lambda' is a reserved keyword in Python
-handler_path = os.path.join(os.path.dirname(__file__), "src", "lambda", "risk_analyzer", "handler.py")
+handler_dir = os.path.join(os.path.dirname(__file__), "src", "lambda", "risk_analyzer")
+sys.path.append(handler_dir)
+
+handler_path = os.path.join(handler_dir, "handler.py")
 spec = importlib.util.spec_from_file_location("handler", handler_path)
 handler_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(handler_module)
-lambda_handler = handler_module.lambda_handler
+lambda_handler = handler_module.handler
 
 st.set_page_config(
     page_title="Sudharshan-AI Fraud Simulator",
@@ -55,7 +58,7 @@ if st.button("Analyze Transaction Risk", type="primary", use_container_width=Tru
     with st.spinner("Analyzing behavioral signals with Amazon Nova..."):
         
         # Build the event payload matching AWS API Gateway
-        event = {
+        payload = {
             "session_id": f"streamlit-demo-{uuid.uuid4().hex[:8]}",
             "user_id": "demo-user-001",
             "amount": float(amount),
@@ -71,9 +74,15 @@ if st.button("Analyze Transaction Risk", type="primary", use_container_width=Tru
             }
         }
         
+        # Wrap in API Gateway event format
+        event = {
+            "body": json.dumps(payload)
+        }
+        
         try:
             # Invoke the lambda handler directly
-            response = lambda_handler(event, None)
+            api_response = lambda_handler(event, None)
+            response = json.loads(api_response["body"])
             
             # Display results
             st.divider()
