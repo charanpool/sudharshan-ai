@@ -28,8 +28,8 @@ from constants import (
     DECISION_DELAY,
     DECISION_HOLD,
 )
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+# Project root for db layer imports
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
 from src.db.dynamo_client import DynamoClient
 
 # Configure logging
