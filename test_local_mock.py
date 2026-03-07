@@ -90,6 +90,8 @@ def run_enhanced_mock_test():
     body = json.loads(response["body"])
     print(f"AI Risk: 5 | Final Risk: {body['risk_score']} | Decision: {body['decision']}")
     print(f"Reasoning: {body['reasoning']}")
+    print("\n--- INVESTIGATION REPORT EXTRACT ---")
+    print(body.get('investigation_report', 'Report not found'))
     
     if body['risk_score'] > 30: # Behavioral engine should have pushed it up from 5
         print("✅ Behavioral Engine logic verified: Score increased due to anomalies.")

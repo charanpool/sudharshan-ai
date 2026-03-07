@@ -44,48 +44,35 @@ class BedrockFraudAnalyzer:
         """
         Analyze a transaction for fraud risk using Bedrock Knowledge Bases & Claude.
         """
-        # Load local Mock RAG intelligence
-        scam_intel = self._load_local_scam_intelligence()
-        
-        prompt = self._build_contextual_prompt(
-            amount, recipient_type, behavioral_signals, time_of_day, scam_intel
-        )
+        prompt = self._build_contextual_prompt(amount, recipient_type, behavioral_signals, time_of_day)
         
         try:
-            # 1. Try cutting-edge RetrieveAndGenerate API (Real Knowledge Base)
+            # 1. Try cutting-edge RetrieveAndGenerate API (Knowledge Base)
             if self.agent_runtime_client:
                 try:
                     return self._invoke_knowledge_base(prompt)
                 except Exception as kb_err:
                     logger.warning(f"KB Retrieval failed, falling back to direct model invocation: {kb_err}")
 
-            # 2. Fallback to direct model invocation with Mock RAG context
+            # 2. Fallback to direct model invocation
             response = self._invoke_direct_model(prompt)
             return self._parse_json_response(response)
             
         except Exception as e:
             logger.error(f"Bedrock analysis failed: {str(e)}")
+            # Fail open - if Bedrock completely fails, return medium risk to not block legitimate users
             return (50, f"Analysis degraded - Model unavailable: {str(e)}", None)
-
-    def _load_local_scam_intelligence(self) -> str:
-        """Load curated Indian scam scripts from local JSON for Mock RAG demo."""
-        try:
-            base_dir = os.path.dirname(__file__)
-            intel_path = os.path.join(base_dir, "scam_intelligence.json")
-            if os.path.exists(intel_path):
-                with open(intel_path, "r") as f:
-                    data = json.load(f)
-                    return json.dumps(data.get("scam_intelligence", []), indent=2)
-            return "No local intelligence found."
-        except Exception as e:
-            logger.warning(f"Could not load local scam intelligence: {e}")
-            return "Intelligence unavailable."
 
     def _invoke_knowledge_base(self, prompt: str) -> Tuple[int, str, Optional[str]]:
         """
         Uses Amazon Bedrock Knowledge Bases (RetrieveAndGenerate) to check latest scam patterns.
-        NOTE: This simulates the exact Boto3 API response structure for the hackathon.
+        NOTE: This is a robust mock simulating the exact Boto3 API response structure for the hackathon,
+        as provisioning a real KB takes time/resources.
         """
+        # In a real deployed environment, this would call:
+        # response = self.agent_runtime_client.retrieve_and_generate(...)
+        
+        # Simulate KB-augmented direct call to demonstrate architecture capabilities
         augmented_prompt = f"[System: Context retrieved from Knowledge Base {self.knowledge_base_id}]\n" + prompt
         response_text = self._invoke_direct_model(augmented_prompt)
         return self._parse_json_response(response_text)
@@ -95,7 +82,7 @@ class BedrockFraudAnalyzer:
         body = json.dumps({
             "anthropic_version": "bedrock-2023-05-31",
             "max_tokens": BEDROCK_MAX_TOKENS,
-            "temperature": 0.1, 
+            "temperature": 0.1, # Low temperature for more deterministic risk scoring
             "messages": [
                 {"role": "user", "content": prompt}
             ]
@@ -116,17 +103,20 @@ class BedrockFraudAnalyzer:
         amount: float,
         recipient_type: str,
         behavioral_signals: dict,
-        time_of_day: int,
-        scam_intel: str
+        time_of_day: int
     ) -> str:
-        """Build the structured prompt for the AI with Multi-Language support."""
-        categories_list = "\n".join([f"- {k}: {v}" for k, v in RISK_CATEGORIES.items()])
+        """Build the structured prompt for the AI with Bharat-centric multi-language focus."""
         
-        return f"""You are a specialized fraud detection AI agent acting as a behavioral analyst for the Indian UPI ecosystem.
-You must analyze a UPI transaction for signs of psychological coercion (e.g., Digital Arrest, KYC Pan Card scam).
+        # Load local scam intelligence for prompt enrichment
+        try:
+            with open(os.path.join(os.path.dirname(__file__), 'scam_intelligence.json'), 'r') as f:
+                intel = json.load(f)
+                patterns = "\n".join([f"- {p['name']} ({', '.join(p['languages'])}): {p['scripts'][0]}" for p in intel['scam_patterns']])
+        except Exception:
+            patterns = "\n".join([f"- {k}: {v}" for k, v in RISK_CATEGORIES.items()])
 
-BHARAT-SPECIFIC INTELLIGENCE (Knowledge Base):
-{scam_intel}
+        return f"""You are a specialized fraud detection AI agent acting as a behavioral analyst for the Indian UPI ecosystem.
+You must analyze a transaction for psychological coercion (Digital Arrest, KYC scams, etc.).
 
 TRANSACTION CONTEXT:
 - Amount: ₹{amount:,.0f}
@@ -134,23 +124,29 @@ TRANSACTION CONTEXT:
 - Time: {time_of_day}:00 hours (24h format)
 
 BEHAVIORAL TELEMETRY (Critical for detecting coercion):
-{json.dumps(behavioral_signals, indent=2)}
+- Typing speed: {behavioral_signals.get('typing_speed_wpm', 'N/A')} WPM
+- Hesitation count (>2s pauses): {behavioral_signals.get('hesitation_count', 0)}
+- Time on confirm screen: {behavioral_signals.get('time_on_confirm_screen_ms', 0)}ms
+- Device state (On active phone call): {behavioral_signals.get('is_on_call', False)}
+- Gyroscope Tremor (Hand shaking intensity 0-10): {behavioral_signals.get('tremor_intensity', 0)}
 
-LANGUAGE CONTEXT:
-Identify patterns in regional languages (Hindi, Kannada, Tamil, Marathi, Hinglish) using your internal training and the provided Knowledge Base scripts.
+INDIAN SCAM PATTERNS & LINGUISTIC NUANCES:
+{patterns}
 
-ANALYTIC TASK:
-1. Heavily weigh device tremors and active calls. 
-2. Match behavioral anomalies against the 'BHARAT-SPECIFIC INTELLIGENCE'.
-3. Support code-switching behavior (Hinglish/Regional) interpretation for fraud scripts.
+ANALYSIS GUIDELINES:
+1. Support Multi-language: The user might be hearing scripts in Hindi, Kannada, Tamil, or Hinglish (e.g., "Aapka account block ho jayega").
+2. Code-switching: Victims often switch between English and regional languages when under stress.
+3. Psychological Red Flags: High tremor + on call + new recipient + high amount is a massive red flag for Digital Arrest.
 
 Respond ONLY in valid JSON format:
 {{
     "risk_score": <0-100 integer>,
-    "reasoning": "<brief explanation, include regional language script match if any>",
-    "matched_pattern": "<pattern_key or null>"
+    "reasoning": "<brief, sharp explanation including linguistic/behavioral anomalies>",
+    "matched_pattern": "<pattern_id or null>",
+    "detected_language": "<detected language or 'unknown'>"
 }}
-"""
+
+Priority: Be conservative but highly sensitive to behavioral anomalies and regional scam nuances."""
 
     def _parse_json_response(self, response_text: str) -> Tuple[int, str, Optional[str]]:
         """Safely parse Claude's JSON response output."""

@@ -54,6 +54,7 @@ class RiskAnalysisResponse:
     decision: str
     reasoning: str
     matched_pattern: Optional[str] = None
+    investigation_report: Optional[str] = None
     
     def to_dict(self) -> dict:
         """Convert to dictionary for JSON response."""
@@ -63,4 +64,5 @@ class RiskAnalysisResponse:
             "decision": self.decision,
             "reasoning": self.reasoning,
             "matched_pattern": self.matched_pattern,
+            "investigation_report": self.investigation_report,
         }

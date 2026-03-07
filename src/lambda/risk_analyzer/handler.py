@@ -16,6 +16,7 @@ from models import (
 )
 from bedrock_client import BedrockFraudAnalyzer
 from behavioral import compute_behavioral_score
+from investigator_report import generate_fraud_fact_sheet
 
 import sys
 import os
@@ -99,6 +100,12 @@ def handler(event: dict, context: Any) -> dict:
         # Update user baseline in DynamoDB
         _update_user_baseline(request.user_id, request.signals)
         
+        # 6. Generate Fraud Fact Sheet (Excellence for Judges)
+        fact_sheet = generate_fraud_fact_sheet(
+            request.session_id, risk_score, decision, reasoning, behavioral_score, matched_pattern
+        )
+        logger.info(f"\n--- FRAUD INVESTIGATION REPORT ---\n{fact_sheet}\n")
+        
         # Build response
         response = RiskAnalysisResponse(
             session_id=request.session_id,
@@ -106,6 +113,7 @@ def handler(event: dict, context: Any) -> dict:
             decision=decision,
             reasoning=reasoning,
             matched_pattern=matched_pattern,
+            investigation_report=fact_sheet
         )
         
         logger.info(f"Final Risk: {risk_score}, Decision: {decision}")

@@ -1,59 +1,70 @@
 {
-    "scam_intelligence": [
+    "scam_patterns": [
         {
-            "id": "DIGITAL_ARREST_001",
-            "name": "CBI/Police Digital Arrest",
+            "id": "digital_arrest_001",
+            "name": "Digital Arrest - Police/CBI Impersonation",
             "languages": [
+                "Hinglish",
                 "Hindi",
-                "English",
-                "Marathi"
-            ],
-            "patterns": [
-                "Involvement in money laundering linked to your Aadhaar",
-                "Demanding you stay on a video call without hanging up",
-                "Fake arrest warrants shown over WhatsApp",
-                "Isolation from family: 'Do not tell anyone, this is secret'"
-            ],
-            "scripts": [
-                "Aapka Aadhaar card ek illegal parcel mein mila hai.",
-                "Aapko abhi digital custody mein liya ja raha hai.",
-                "Phone mat katiye, warna police aapke ghar pahunch jayegi."
-            ]
-        },
-        {
-            "id": "KYC_EXPIRY_001",
-            "name": "Bank/PAN KYC Update Scam",
-            "languages": [
-                "Kannada",
-                "Telugu",
                 "English"
             ],
-            "patterns": [
-                "Urgent timeline: 'Account will block in 24 hours'",
-                "Request to click on bit.ly or tinyurl links",
-                "Impersonation of leading banks (SBI, HDFC, ICICI)"
-            ],
             "scripts": [
-                "Dear Customer, your HDFC bank account KYC has expired. Please update immediately via link.",
-                "Namma bank KYC expire agide, dayavittu ee link click madi update madi."
+                "Aapke naam par illegal narcotics parcel mila hai.",
+                "You are under digital arrest. Do not disconnect the call.",
+                "CBI officer speaking. To settle this case, transfer funds to the verification account."
+            ],
+            "behavioral_indicators": [
+                "Active call + Nervous typing",
+                "Tremors",
+                "Isolation"
+            ],
+            "avg_amounts": [
+                50000,
+                200000
             ]
         },
         {
-            "id": "ELECTRICITY_BILL_001",
-            "name": "Electricity Disconnection Scam",
+            "id": "kyc_pan_002",
+            "name": "Urgent KYC/PAN Update",
             "languages": [
+                "Kannada",
                 "Hindi",
-                "Tamil",
-                "Gujarati"
-            ],
-            "patterns": [
-                "Late-night disconnection threat (9:30 PM)",
-                "Request to call a 'personal' officer number",
-                "Minimal amount collection (₹10-100) to gain remote access"
+                "English"
             ],
             "scripts": [
-                "Aapka bijli ka bill update nahi hai. Aaj raat line kaat di jayegi.",
-                "Power Department: Transaction failed. Call 98XXXXXX immediately."
+                "Update your PAN immediately or your bank account will be blocked.",
+                "Enter your PIN in the link provided to verify your KYC.",
+                "Nimma bank account block agide. Eegle verify madi."
+            ],
+            "behavioral_indicators": [
+                "High urgency",
+                "Fast navigation",
+                "New recipient"
+            ],
+            "avg_amounts": [
+                5000,
+                25000
+            ]
+        },
+        {
+            "id": "lottery_prize_003",
+            "name": "KBC/Lottery Prize Scam",
+            "languages": [
+                "Hindi",
+                "English"
+            ],
+            "scripts": [
+                "Aapne ₹25 Lakh ki lottery jeeti hai!",
+                "Pay the processing fee via UPI to claim your prize.",
+                "KBC lucky draw winner code: 786."
+            ],
+            "behavioral_indicators": [
+                "Excitement/Hesitation",
+                "Step-by-step guidance over call"
+            ],
+            "avg_amounts": [
+                10000,
+                50000
             ]
         }
     ]
