@@ -74,7 +74,7 @@ Sudharshan-AI is a real-time, privacy-first fraud prevention system designed to 
 | FR-06 | Voice Sentiment Analysis | Phase 2 | Detect stress/coercion in voice during calls |
 | FR-07 | On-Device Edge AI | Phase 3 | Offline protection using TensorFlow Lite |
 | FR-08 | NCRP 1930 Integration | Phase 2 | Direct alert channel to cyber crime helpline |
-| FR-09 | Multi-language Support | Phase 2 | Support for 10+ Indian languages |
+| FR-09 | Multi-language Support | [DONE] | Support for regional (Hinglish/Kannada) scripts |
 
 ---
 

@@ -212,10 +212,14 @@ See `docs/diagrams/process-flow.png` for the detailed process flow diagram.
 ```
 lambda/
 ├── risk_analyzer/
-│   ├── handler.py          # Main Lambda handler
-│   ├── behavioral.py       # Behavioral analysis logic
-│   ├── bedrock_client.py   # Bedrock Agent integration
-│   └── models.py           # Data models
+│   ├── handler.py          # Main Lambda orchestrator
+│   ├── core/               # Core logic engines
+│   │   ├── analyzer.py     # Bedrock AI integration
+│   │   └── behavioral.py   # Behavioral analysis logic
+│   ├── utils/              # Supporting utilities
+│   │   ├── models.py       # Data models
+│   │   └── reporting.py    # Investigator report logic
+│   └── scam_intelligence.json # Scam script intelligence
 ```
 
 **Timeout:** 10 seconds  
