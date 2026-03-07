@@ -3,7 +3,7 @@ import json
 import uuid
 import sys
 import os
-import importlib.util
+import importlib
 
 # Ensure AWS region is set before loading boto3
 if "AWS_DEFAULT_REGION" not in os.environ:
@@ -12,14 +12,12 @@ if "AWS_DEFAULT_REGION" not in os.environ:
 # Add root to pythonpath
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-# Dynamically import handler because 'lambda' is a reserved keyword in Python
+# Also add the risk_analyzer directory so it can resolve its internal 'utils' and 'core' folders
 handler_dir = os.path.join(os.path.dirname(__file__), "src", "lambda", "risk_analyzer")
 sys.path.append(handler_dir)
 
-handler_path = os.path.join(handler_dir, "handler.py")
-spec = importlib.util.spec_from_file_location("handler", handler_path)
-handler_module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(handler_module)
+# Import via string to bypass Python's 'lambda' keyword syntax error
+handler_module = importlib.import_module("src.lambda.risk_analyzer.handler")
 lambda_handler = handler_module.handler
 
 st.set_page_config(
