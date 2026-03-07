@@ -97,48 +97,48 @@ class BedrockFraudAnalyzer:
         time_of_day: int
     ) -> str:
         """Build the structured prompt for the AI with Bharat-centric multi-language focus."""
-        
-        # Load local scam intelligence for prompt enrichment
+
+        # Load pattern categories for prompt enrichment
         try:
             intel_path = os.path.join(os.path.dirname(__file__), '../scam_intelligence.json')
             with open(intel_path, 'r') as f:
                 intel = json.load(f)
-                patterns = "\n".join([f"- {p['name']} ({', '.join(p['languages'])}): {p['scripts'][0]}" for p in intel['scam_patterns']])
+                patterns = "\n".join([f"- {p['name']} ({', '.join(p['languages'])})" for p in intel['scam_patterns']])
         except Exception:
             patterns = "\n".join([f"- {k}: {v}" for k, v in RISK_CATEGORIES.items()])
 
-        return f"""You are a specialized fraud detection AI agent acting as a behavioral analyst for the Indian UPI ecosystem.
-You must analyze a transaction for psychological coercion (Digital Arrest, KYC scams, etc.).
+        return f"""You are a financial safety analyst for the Indian UPI digital payments ecosystem.
+Your role is to evaluate transaction behavioral telemetry and determine a risk score.
 
-TRANSACTION CONTEXT:
-- Amount: ₹{amount:,.0f}
-- Recipient: {recipient_type} contact
-- Time: {time_of_day}:00 hours (24h format)
+TRANSACTION DATA:
+- Amount: INR {amount:,.0f}
+- Recipient type: {recipient_type}
+- Time: {time_of_day}:00 hours
 
-BEHAVIORAL TELEMETRY (Critical for detecting coercion):
+USER BEHAVIORAL TELEMETRY:
 - Typing speed: {behavioral_signals.get('typing_speed_wpm', 'N/A')} WPM
-- Hesitation count (>2s pauses): {behavioral_signals.get('hesitation_count', 0)}
-- Time on confirm screen: {behavioral_signals.get('time_on_confirm_screen_ms', 0)}ms
-- Device state (On active phone call): {behavioral_signals.get('is_on_call', False)}
-- Gyroscope Tremor (Hand shaking intensity 0-10): {behavioral_signals.get('tremor_intensity', 0)}
+- Hesitation pauses (>2s): {behavioral_signals.get('hesitation_count', 0)}
+- Time on confirmation screen: {behavioral_signals.get('time_on_confirm_screen_ms', 0)}ms
+- Active phone call during transaction: {behavioral_signals.get('is_on_call', False)}
+- Device motion intensity (0-10): {behavioral_signals.get('tremor_intensity', 0)}
 
-INDIAN SCAM PATTERNS & LINGUISTIC NUANCES:
+KNOWN RISK CATEGORIES:
 {patterns}
 
-ANALYSIS GUIDELINES:
-1. Support Multi-language: The user might be hearing scripts in Hindi, Kannada, Tamil, or Hinglish (e.g., "Aapka account block ho jayega").
-2. Code-switching: Victims often switch between English and regional languages when under stress.
-3. Psychological Red Flags: High tremor + on call + new recipient + high amount is a massive red flag for Digital Arrest.
+EVALUATION CRITERIA:
+1. High device motion + active call + new recipient + large amount = very high risk.
+2. Multiple hesitation pauses suggest the user may be under external pressure.
+3. Consider multi-language context (Hindi, Kannada, Hinglish).
+4. A low typing speed combined with high hesitation is a strong stress indicator.
 
-Respond ONLY in valid JSON format:
+You must respond ONLY in valid JSON:
 {{
-    "risk_score": <0-100 integer>,
-    "reasoning": "<brief, sharp explanation including linguistic/behavioral anomalies>",
-    "matched_pattern": "<pattern_id or null>",
+    "risk_score": <integer 0-100>,
+    "reasoning": "<brief explanation of behavioral anomalies detected>",
+    "matched_pattern": "<category name or null>",
     "detected_language": "<detected language or 'unknown'>"
-}}
+}}"""
 
-Priority: Be conservative but highly sensitive to behavioral anomalies and regional scam nuances."""
 
     def _parse_json_response(self, response_text: str) -> Tuple[int, str, Optional[str]]:
         """Safely parse Claude's JSON response output."""
