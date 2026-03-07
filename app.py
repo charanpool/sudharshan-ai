@@ -9,16 +9,15 @@ import importlib
 if "AWS_DEFAULT_REGION" not in os.environ:
     os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
 
-# Add root to pythonpath
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Add directories to sys.path so we can import without syntax errors
+# 1. Add root for 'src.db...'
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# 2. Add risk_analyzer directory for 'handler' and 'utils...'
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src", "lambda", "risk_analyzer"))
 
-# Also add the risk_analyzer directory so it can resolve its internal 'utils' and 'core' folders
-handler_dir = os.path.join(os.path.dirname(__file__), "src", "lambda", "risk_analyzer")
-sys.path.append(handler_dir)
-
-# Import via string to bypass Python's 'lambda' keyword syntax error
-handler_module = importlib.import_module("src.lambda.risk_analyzer.handler")
-lambda_handler = handler_module.handler
+# Now we can just import the handler module directly
+import handler
+lambda_handler = handler.handler
 
 st.set_page_config(
     page_title="Sudharshan-AI Fraud Simulator",
