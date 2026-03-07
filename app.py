@@ -4,9 +4,17 @@ import uuid
 import sys
 import os
 
+import importlib.util
+
 # Add root to pythonpath
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from src.lambda.risk_analyzer.handler import lambda_handler
+
+# Dynamically import handler because 'lambda' is a reserved keyword in Python
+handler_path = os.path.join(os.path.dirname(__file__), "src", "lambda", "risk_analyzer", "handler.py")
+spec = importlib.util.spec_from_file_location("handler", handler_path)
+handler_module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(handler_module)
+lambda_handler = handler_module.lambda_handler
 
 st.set_page_config(
     page_title="Sudharshan-AI Fraud Simulator",
