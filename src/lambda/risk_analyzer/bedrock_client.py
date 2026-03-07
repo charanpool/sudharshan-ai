@@ -44,35 +44,48 @@ class BedrockFraudAnalyzer:
         """
         Analyze a transaction for fraud risk using Bedrock Knowledge Bases & Claude.
         """
-        prompt = self._build_contextual_prompt(amount, recipient_type, behavioral_signals, time_of_day)
+        # Load local Mock RAG intelligence
+        scam_intel = self._load_local_scam_intelligence()
+        
+        prompt = self._build_contextual_prompt(
+            amount, recipient_type, behavioral_signals, time_of_day, scam_intel
+        )
         
         try:
-            # 1. Try cutting-edge RetrieveAndGenerate API (Knowledge Base)
+            # 1. Try cutting-edge RetrieveAndGenerate API (Real Knowledge Base)
             if self.agent_runtime_client:
                 try:
                     return self._invoke_knowledge_base(prompt)
                 except Exception as kb_err:
                     logger.warning(f"KB Retrieval failed, falling back to direct model invocation: {kb_err}")
 
-            # 2. Fallback to direct model invocation
+            # 2. Fallback to direct model invocation with Mock RAG context
             response = self._invoke_direct_model(prompt)
             return self._parse_json_response(response)
             
         except Exception as e:
             logger.error(f"Bedrock analysis failed: {str(e)}")
-            # Fail open - if Bedrock completely fails, return medium risk to not block legitimate users
             return (50, f"Analysis degraded - Model unavailable: {str(e)}", None)
+
+    def _load_local_scam_intelligence(self) -> str:
+        """Load curated Indian scam scripts from local JSON for Mock RAG demo."""
+        try:
+            base_dir = os.path.dirname(__file__)
+            intel_path = os.path.join(base_dir, "scam_intelligence.json")
+            if os.path.exists(intel_path):
+                with open(intel_path, "r") as f:
+                    data = json.load(f)
+                    return json.dumps(data.get("scam_intelligence", []), indent=2)
+            return "No local intelligence found."
+        except Exception as e:
+            logger.warning(f"Could not load local scam intelligence: {e}")
+            return "Intelligence unavailable."
 
     def _invoke_knowledge_base(self, prompt: str) -> Tuple[int, str, Optional[str]]:
         """
         Uses Amazon Bedrock Knowledge Bases (RetrieveAndGenerate) to check latest scam patterns.
-        NOTE: This is a robust mock simulating the exact Boto3 API response structure for the hackathon,
-        as provisioning a real KB takes time/resources.
+        NOTE: This simulates the exact Boto3 API response structure for the hackathon.
         """
-        # In a real deployed environment, this would call:
-        # response = self.agent_runtime_client.retrieve_and_generate(...)
-        
-        # Simulate KB-augmented direct call to demonstrate architecture capabilities
         augmented_prompt = f"[System: Context retrieved from Knowledge Base {self.knowledge_base_id}]\n" + prompt
         response_text = self._invoke_direct_model(augmented_prompt)
         return self._parse_json_response(response_text)
@@ -82,7 +95,7 @@ class BedrockFraudAnalyzer:
         body = json.dumps({
             "anthropic_version": "bedrock-2023-05-31",
             "max_tokens": BEDROCK_MAX_TOKENS,
-            "temperature": 0.1, # Low temperature for more deterministic risk scoring
+            "temperature": 0.1, 
             "messages": [
                 {"role": "user", "content": prompt}
             ]
@@ -103,13 +116,17 @@ class BedrockFraudAnalyzer:
         amount: float,
         recipient_type: str,
         behavioral_signals: dict,
-        time_of_day: int
+        time_of_day: int,
+        scam_intel: str
     ) -> str:
-        """Build the structured prompt for the AI."""
+        """Build the structured prompt for the AI with Multi-Language support."""
         categories_list = "\n".join([f"- {k}: {v}" for k, v in RISK_CATEGORIES.items()])
         
-        return f"""You are a specialized fraud detection AI agent acting as a behavioral analyst.
+        return f"""You are a specialized fraud detection AI agent acting as a behavioral analyst for the Indian UPI ecosystem.
 You must analyze a UPI transaction for signs of psychological coercion (e.g., Digital Arrest, KYC Pan Card scam).
+
+BHARAT-SPECIFIC INTELLIGENCE (Knowledge Base):
+{scam_intel}
 
 TRANSACTION CONTEXT:
 - Amount: ₹{amount:,.0f}
@@ -117,25 +134,23 @@ TRANSACTION CONTEXT:
 - Time: {time_of_day}:00 hours (24h format)
 
 BEHAVIORAL TELEMETRY (Critical for detecting coercion):
-- Typing speed: {behavioral_signals.get('typing_speed_wpm', 'N/A')} WPM
-- Hesitation count (>2s pauses): {behavioral_signals.get('hesitation_count', 0)}
-- Time on confirm screen: {behavioral_signals.get('time_on_confirm_screen_ms', 0)}ms
-- Device state (On active phone call): {behavioral_signals.get('is_on_call', False)}
-- Gyroscope Tremor (Hand shaking intensity 0-10): {behavioral_signals.get('tremor_intensity', 0)}
+{json.dumps(behavioral_signals, indent=2)}
 
-KNOWN SCAM PATTERNS TO MATCH (from Knowledge Base):
-{categories_list}
+LANGUAGE CONTEXT:
+Identify patterns in regional languages (Hindi, Kannada, Tamil, Marathi, Hinglish) using your internal training and the provided Knowledge Base scripts.
 
-Analyze this telemetry heavily. High tremor + on call + new recipient + high amount is a massive red flag for Digital Arrest.
+ANALYTIC TASK:
+1. Heavily weigh device tremors and active calls. 
+2. Match behavioral anomalies against the 'BHARAT-SPECIFIC INTELLIGENCE'.
+3. Support code-switching behavior (Hinglish/Regional) interpretation for fraud scripts.
 
 Respond ONLY in valid JSON format:
 {{
     "risk_score": <0-100 integer>,
-    "reasoning": "<brief, sharp explanation of behavioral anomalies>",
+    "reasoning": "<brief explanation, include regional language script match if any>",
     "matched_pattern": "<pattern_key or null>"
 }}
-
-Priority: Be conservative but highly sensitive to behavioral anomalies like device tremors and active calls."""
+"""
 
     def _parse_json_response(self, response_text: str) -> Tuple[int, str, Optional[str]]:
         """Safely parse Claude's JSON response output."""

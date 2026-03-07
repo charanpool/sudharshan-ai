@@ -1,0 +1,60 @@
+{
+    "scam_intelligence": [
+        {
+            "id": "DIGITAL_ARREST_001",
+            "name": "CBI/Police Digital Arrest",
+            "languages": [
+                "Hindi",
+                "English",
+                "Marathi"
+            ],
+            "patterns": [
+                "Involvement in money laundering linked to your Aadhaar",
+                "Demanding you stay on a video call without hanging up",
+                "Fake arrest warrants shown over WhatsApp",
+                "Isolation from family: 'Do not tell anyone, this is secret'"
+            ],
+            "scripts": [
+                "Aapka Aadhaar card ek illegal parcel mein mila hai.",
+                "Aapko abhi digital custody mein liya ja raha hai.",
+                "Phone mat katiye, warna police aapke ghar pahunch jayegi."
+            ]
+        },
+        {
+            "id": "KYC_EXPIRY_001",
+            "name": "Bank/PAN KYC Update Scam",
+            "languages": [
+                "Kannada",
+                "Telugu",
+                "English"
+            ],
+            "patterns": [
+                "Urgent timeline: 'Account will block in 24 hours'",
+                "Request to click on bit.ly or tinyurl links",
+                "Impersonation of leading banks (SBI, HDFC, ICICI)"
+            ],
+            "scripts": [
+                "Dear Customer, your HDFC bank account KYC has expired. Please update immediately via link.",
+                "Namma bank KYC expire agide, dayavittu ee link click madi update madi."
+            ]
+        },
+        {
+            "id": "ELECTRICITY_BILL_001",
+            "name": "Electricity Disconnection Scam",
+            "languages": [
+                "Hindi",
+                "Tamil",
+                "Gujarati"
+            ],
+            "patterns": [
+                "Late-night disconnection threat (9:30 PM)",
+                "Request to call a 'personal' officer number",
+                "Minimal amount collection (₹10-100) to gain remote access"
+            ],
+            "scripts": [
+                "Aapka bijli ka bill update nahi hai. Aaj raat line kaat di jayegi.",
+                "Power Department: Transaction failed. Call 98XXXXXX immediately."
+            ]
+        }
+    ]
+}
