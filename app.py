@@ -19,9 +19,12 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src", "lambda", "ris
 import handler
 lambda_handler = handler.handler
 
+from PIL import Image
+
+favicon = Image.open("docs/assets/logo-transparent.png")
 st.set_page_config(
     page_title="Sudharshan-AI Fraud Simulator",
-    page_icon="🛡️",
+    page_icon=favicon,
     layout="wide"
 )
 
