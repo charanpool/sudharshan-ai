@@ -53,12 +53,68 @@ class BedrockFraudAnalyzer:
 
             # 2. Fallback to direct model invocation
             response = self._invoke_direct_model(prompt)
-            return self._parse_json_response(response)
+            result = self._parse_json_response(response)
+            # If parsing returned the fallback score (content filter), use heuristic instead
+            if result[1] == "Analysis fallback due to output parsing error":
+                logger.warning("Content filter detected, using heuristic fallback")
+                return self._heuristic_fallback(amount, recipient_type, behavioral_signals, time_of_day)
+            return result
             
         except Exception as e:
             logger.error(f"Bedrock analysis failed: {str(e)}")
-            # Fail open - if Bedrock completely fails, return medium risk to not block legitimate users
-            return (50, f"Analysis degraded - Model unavailable: {str(e)}", None)
+            # Fail open - if Bedrock completely fails, compute heuristic risk from signals
+            return self._heuristic_fallback(amount, recipient_type, behavioral_signals, time_of_day)
+
+    def _heuristic_fallback(
+        self,
+        amount: float,
+        recipient_type: str,
+        behavioral_signals: dict,
+        time_of_day: int
+    ) -> Tuple[int, str, Optional[str]]:
+        """Compute risk heuristically when AI model is unavailable."""
+        score = 0
+        reasons = []
+
+        # Recipient risk
+        if "scam" in recipient_type.lower() or "flagged" in recipient_type.lower():
+            score += 40
+            reasons.append("recipient is flagged as high-risk")
+        elif "new" in recipient_type.lower() or "unknown" in recipient_type.lower():
+            score += 15
+            reasons.append("new/unknown recipient")
+
+        # Amount risk
+        if amount >= 50000:
+            score += 15
+            reasons.append(f"large amount (₹{amount:,.0f})")
+        elif amount >= 10000:
+            score += 5
+
+        # Behavioral signals
+        if behavioral_signals.get("is_on_call"):
+            score += 10
+            reasons.append("active phone call during transaction")
+        if behavioral_signals.get("typing_speed_wpm", 50) < 20:
+            score += 10
+            reasons.append("very slow typing speed")
+        if behavioral_signals.get("hesitation_count", 0) > 5:
+            score += 10
+            reasons.append("high hesitation count")
+        if behavioral_signals.get("tremor_intensity", 0) > 6:
+            score += 10
+            reasons.append("high device tremor")
+
+        # Time risk
+        if time_of_day < 5 or time_of_day > 22:
+            score += 5
+            reasons.append("unusual hour")
+
+        score = min(100, score)
+        reasoning = "Heuristic analysis (AI model filtered): " + "; ".join(reasons) if reasons else "No significant risk factors detected"
+        pattern = "General Anomaly" if score > 30 else None
+
+        return (score, reasoning, pattern)
 
     def _invoke_knowledge_base(self, prompt: str) -> Tuple[int, str, Optional[str]]:
         """Uses Amazon Bedrock Knowledge Bases (RetrieveAndGenerate)."""
