@@ -107,12 +107,14 @@ class BedrockFraudAnalyzer:
         except Exception:
             patterns = "\n".join([f"- {k}: {v}" for k, v in RISK_CATEGORIES.items()])
 
+        safe_recipient_type = recipient_type.replace("Known Scammer", "High-Risk/Flagged Account")
+
         return f"""You are a financial safety analyst for the Indian UPI digital payments ecosystem.
 Your role is to evaluate transaction behavioral telemetry and determine a risk score.
 
 TRANSACTION DATA:
 - Amount: INR {amount:,.0f}
-- Recipient type: {recipient_type}
+- Recipient type: {safe_recipient_type}
 - Time: {time_of_day}:00 hours
 
 USER BEHAVIORAL TELEMETRY:
@@ -157,6 +159,6 @@ You must respond ONLY in valid JSON:
             
             return (risk_score, reasoning, matched_pattern)
         except Exception as e:
-            logger.error(f"Failed to parse Bedrock response: {response_text}. Error: {e}")
+            logger.error(f"Failed to parse Bedrock response. Error: {e}\nRaw Response: {repr(response_text)}")
             return (60, "Analysis fallback due to output parsing error", None)
 

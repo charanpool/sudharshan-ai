@@ -35,7 +35,17 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.title("🛡️ Sudharshan-AI: Behavioral Fraud Detection")
+import base64
+
+with open("docs/assets/logo-transparent.png", "rb") as f:
+    logo_b64 = base64.b64encode(f.read()).decode()
+
+st.markdown(f"""
+<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 0;">
+    <img src="data:image/png;base64,{logo_b64}" width="50" style="vertical-align: middle;" />
+    <h1 style="margin: 0; padding: 0;">Sudharshan-AI: Behavioral Fraud Detection</h1>
+</div>
+""", unsafe_allow_html=True)
 st.markdown("Simulate a UPI transaction and test the AI's ability to detect **psychological coercion** (like Digital Arrest) based purely on behavioral telemetry.")
 
 with st.sidebar:
@@ -61,15 +71,17 @@ if st.button("Analyze Transaction Risk", type="primary", use_container_width=Tru
         payload = {
             "session_id": f"streamlit-demo-{uuid.uuid4().hex[:8]}",
             "user_id": "demo-user-001",
-            "amount": float(amount),
-            "recipient_id": "recv-999" if recipient_type == "New/Unknown" else "recv-111",
-            "recipient_type": recipient_type,
-            "time_of_day": time_of_day,
-            "behavioral_signals": {
+            "transaction": {
+                "amount": float(amount),
+                "recipient_id": "recv-999" if recipient_type == "New/Unknown" else "recv-111",
+                "recipient_type": recipient_type,
+            },
+            "signals": {
                 "typing_speed_wpm": typing_speed,
                 "hesitation_count": hesitation_count,
                 "time_on_confirm_screen_ms": confirm_time_ms,
                 "is_on_call": is_on_call,
+                "time_of_day_hour": time_of_day,
                 "tremor_intensity": tremor_intensity
             }
         }
