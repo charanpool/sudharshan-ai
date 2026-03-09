@@ -75,6 +75,10 @@ with st.sidebar:
     tremor_intensity = st.slider("Gyroscope Tremor (0-10)", 0, 10, 8, help="High tremor implies physical shaking/stress.")
     is_on_call = st.checkbox("Active Phone Call During Tx", value=True, help="Scammers keep victims on the phone.")
 
+    st.subheader("🆘 Duress PIN")
+    use_duress = st.checkbox("Enter Duress PIN", value=False, help="Simulate entering a secret Duress PIN to trigger a silent alert.")
+    duress_pin = st.text_input("Duress PIN", value="9999", type="password", disabled=not use_duress, help="Default duress PIN is 9999") if use_duress else None
+
 st.subheader("🔍 Run Analysis")
 if st.button("Analyze Transaction Risk", type="primary", use_container_width=True):
     with st.spinner("Analyzing behavioral signals with Amazon Nova..."):
@@ -87,6 +91,7 @@ if st.button("Analyze Transaction Risk", type="primary", use_container_width=Tru
                 "amount": float(amount),
                 "recipient_id": "recv-999" if recipient_type == "New/Unknown" else "recv-111",
                 "recipient_type": recipient_type,
+                **(  {"entered_pin": duress_pin} if use_duress and duress_pin else {}),
             },
             "signals": {
                 "typing_speed_wpm": typing_speed,
