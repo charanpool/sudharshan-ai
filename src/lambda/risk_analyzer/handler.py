@@ -198,10 +198,14 @@ def _trigger_workflow(session_id: str, risk_score: int, decision: str, reasoning
 
 def _check_duress_pin(entered_pin: Optional[str], risk_profile: dict) -> bool:
     """Check if the entered PIN matches the configured Duress PIN."""
-    if not entered_pin or not risk_profile:
+    if not entered_pin:
         return False
 
-    duress_pin = risk_profile.get("duress_pin_hash")
+    # Get duress PIN from risk profile, or use demo default if DB unavailable
+    duress_pin = risk_profile.get("duress_pin_hash") if risk_profile else None
+    if not duress_pin:
+        duress_pin = "9999"  # Default demo Duress PIN when DynamoDB is not provisioned
+
     return entered_pin == duress_pin
 
 
