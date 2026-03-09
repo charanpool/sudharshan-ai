@@ -5,6 +5,15 @@ import sys
 import os
 import importlib
 
+# Load Streamlit secrets into env vars (for Streamlit Cloud deployment)
+# This must happen BEFORE importing handler/boto3
+try:
+    for key in ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_DEFAULT_REGION"]:
+        if key in st.secrets:
+            os.environ[key] = st.secrets[key]
+except Exception:
+    pass  # Running locally — secrets not available, boto3 uses ~/.aws/credentials
+
 # Ensure AWS region is set before loading boto3
 if "AWS_DEFAULT_REGION" not in os.environ:
     os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
